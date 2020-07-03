@@ -1,19 +1,21 @@
-FROM rust:latest as cargo-build
+FROM ekidd/rust-musl-builder:stable as builder
 
-RUN apt-get update
-RUN apt-get install musl-tools -y
-RUN rustup target add x86_64-unknown-linux-musl
+ENV PKG_CONFIG_ALLOW_CROSS=1
 
-WORKDIR /usr/src/discord-bot
-ADD . /usr/src/discord-bot
+WORKDIR /home/rust/src
+RUN sudo chown -R rust:rust /home/rust/src
 
-RUN cargo build --release --target=x86_64-unknown-linux-musl
+ADD . .
+
+RUN cargo build --release
 
 # ------------------------------------------------------------------------------
 
 FROM alpine:latest
+RUN apk --no-cache add ca-certificates
 
-WORKDIR /usr/src/discord-bot
-COPY --from=cargo-build /usr/src/discord-bot/target/x86_64-unknown-linux-musl/release/discord-bot .
+COPY --from=builder \
+  /home/rust/src/target/x86_64-unknown-linux-musl/release/discord-bot \
+  /usr/local/bin/
 
-CMD ["./discord-bot"]
+CMD /usr/local/bin/discord-bot

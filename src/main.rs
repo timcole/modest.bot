@@ -17,7 +17,7 @@ use std::{collections::HashSet, sync::Arc};
 struct General;
 
 fn main() {
-  dotenv::dotenv().expect(".env file not found.");
+  dotenv::dotenv();
 
   let token: String = dotenv::var("DISCORD_TOKEN").expect("Missing token env");
 
