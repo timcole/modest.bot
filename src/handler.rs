@@ -48,7 +48,7 @@ impl EventHandler for Handler {
           let _ = msg.delete(&ctx);
           match msg.reply(
             &ctx,
-            "**Your message blocked by Automod. Please watch what you say.**",
+            "**Your message was blocked by Automod. Please watch what you say.**",
           ) {
             Ok(msg) => {
               thread::spawn(move || {
