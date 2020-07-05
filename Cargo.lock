@@ -224,7 +224,6 @@ dependencies = [
 name = "discord-bot"
 version = "0.1.0"
 dependencies = [
- "chrono",
  "dotenv",
  "log",
  "pretty_env_logger",

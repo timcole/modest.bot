@@ -1,8 +1,17 @@
 use serenity::framework::standard::macros::group;
 
-pub mod commands;
-use commands::ping::*;
+// pub mod general;
+
+// #[group]
+// #[commands()]
+// struct General;
+
+pub mod admin;
+use admin::{kill::*, ping::*};
 
 #[group]
-#[commands(ping)]
-struct General;
+#[commands(ping, kill)]
+#[owners_only]
+struct Admin;
+
+pub mod help;

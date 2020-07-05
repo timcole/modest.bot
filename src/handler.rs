@@ -3,15 +3,16 @@ use crate::utils::mention;
 use serenity::{
   async_trait,
   client::Context,
-  model::{channel::Message, gateway::Ready},
+  model::{channel::Message, gateway::Activity, gateway::Ready, user::OnlineStatus},
   prelude::EventHandler,
 };
+use std::env;
 
 pub struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
-  async fn ready(&self, _: Context, ready: Ready) {
+  async fn ready(&self, ctx: Context, ready: Ready) {
     if let Some(shard) = ready.shard {
       log::info!(
         "{} connected on shard {}/{}",
@@ -20,6 +21,15 @@ impl EventHandler for Handler {
         shard[1],
       );
     }
+    ctx
+      .set_presence(
+        Some(Activity::listening(&format!(
+          "Version: {}",
+          &env::var("GIT_HASH").unwrap()[0..7]
+        ))),
+        OnlineStatus::DoNotDisturb,
+      )
+      .await;
   }
   async fn message(&self, ctx: Context, msg: Message) {
     let guild = match msg.guild_id {
