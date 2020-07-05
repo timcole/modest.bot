@@ -1,4 +1,8 @@
 use serde::{Deserialize, Serialize};
+use serenity::{client::Context, model::channel::Message};
+use std::env;
+use std::time::Duration;
+use tokio::time::delay_for;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Data {
@@ -23,9 +27,11 @@ struct Resp {
   data: Vec<RespData>,
 }
 
-#[tokio::main]
-pub async fn automod(msg: String) -> Result<bool, reqwest::Error> {
-  let client_id: String = dotenv::var("TWITCH_CLIENT").expect("Missing twitch client");
+const AUTOMOD_MESSAGE: &'static str =
+  "**Your message was blocked by Automod. Please watch what you say.**";
+
+pub async fn automod(ctx: Context, mut msg: Message) -> Result<bool, reqwest::Error> {
+  let client_id: String = env::var("TWITCH_CLIENT").expect("Missing twitch client");
   let bearer: String = format!(
     "Bearer {}",
     dotenv::var("TWITCH_BEARER").expect("Missing twitch bearer")
@@ -36,9 +42,9 @@ pub async fn automod(msg: String) -> Result<bool, reqwest::Error> {
     .post("https://api.twitch.tv/helix/moderation/enforcements/status?broadcaster_id=51684790")
     .json(&Body {
       data: vec![Data {
-        msg_id: String::from("1"),
+        msg_id: msg.id.to_string().clone(),
         user_id: String::from("1"),
-        msg_text: msg,
+        msg_text: msg.content.clone(),
       }],
     })
     .header("Client-ID", client_id)
@@ -48,5 +54,23 @@ pub async fn automod(msg: String) -> Result<bool, reqwest::Error> {
     .json()
     .await?;
 
-  Ok(automod_resp.data[0].is_permitted)
+  if automod_resp.data[0].is_permitted {
+    return Ok(true);
+  }
+
+  if msg.delete(&ctx).await.is_err() {
+    log::error!("failed to delete message");
+    return Ok(false);
+  }
+
+  msg = msg.reply(&ctx, AUTOMOD_MESSAGE).await.ok().unwrap();
+
+  tokio::spawn(async move {
+    delay_for(Duration::from_millis(15000)).await;
+    if !msg.delete(&ctx).await.is_err() {
+      log::debug!("deleted warning to prevent spam");
+    }
+  });
+
+  Ok(false)
 }

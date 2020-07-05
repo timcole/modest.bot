@@ -1,66 +1,66 @@
-use crate::twitch::automod::*;
-use serenity::client::Context;
-use serenity::model::{channel::Message, gateway::Ready, id::UserId};
-use serenity::prelude::EventHandler;
-use std::thread;
-use std::time::Duration;
+use crate::twitch::automod;
+use crate::utils::mention;
+use serenity::{
+  async_trait,
+  client::Context,
+  model::{channel::Message, gateway::Activity, gateway::Ready, user::OnlineStatus},
+  prelude::EventHandler,
+};
+use std::env;
 
 pub struct Handler;
 
+#[async_trait]
 impl EventHandler for Handler {
-  fn ready(&self, _: Context, ready: Ready) {
+  async fn ready(&self, ctx: Context, ready: Ready) {
     if let Some(shard) = ready.shard {
-      println!(
+      log::info!(
         "{} connected on shard {}/{}",
         ready.user.name,
         shard[0] + 1,
         shard[1],
       );
     }
+    ctx
+      .set_presence(
+        Some(Activity::listening(&format!(
+          "Version: {}",
+          &env::var("GIT_HASH").unwrap()[0..7]
+        ))),
+        OnlineStatus::DoNotDisturb,
+      )
+      .await;
   }
-  fn message(&self, ctx: Context, msg: Message) {
-    println!(
-      "({id}) {name}#{discrim}: {content}",
+  async fn message(&self, ctx: Context, msg: Message) {
+    let guild = match msg.guild_id {
+      Some(id) => id,
+      // Ignore DMs
+      None => return,
+    };
+
+    let channel = msg.channel_id;
+
+    log::info!(
+      "[{guild}|{channel}] - ({id}) {name}#{discrim}: {content}",
+      guild = guild,
+      channel = channel,
       id = msg.author.id,
       name = msg.author.name,
       discrim = msg.author.discriminator,
       content = msg.content
     );
 
-    // Ignore messages from the bot
-    if msg.is_own(&ctx) {
+    // Ignore messages from bots
+    if msg.author.bot {
       return;
     }
 
-    let tim = UserId(83281345949728768).to_user(&ctx).unwrap();
-    if msg.mentions.contains(&tim) {
-      let _ = msg.channel_id.say(
-        &ctx.http,
-        "Imagine pinging Tim... <:haHaa:340276843523473409>",
-      );
-
-      return;
+    if automod::automod(ctx.clone(), msg.clone())
+      .await
+      .ok()
+      .unwrap()
+    {
+      mention::tim(ctx.clone(), msg.clone()).await;
     }
-
-    match automod(msg.content.clone()) {
-      Ok(bool) => {
-        if !bool {
-          let _ = msg.delete(&ctx);
-          match msg.reply(
-            &ctx,
-            "**Your message blocked by Automod. Please watch what you say.**",
-          ) {
-            Ok(msg) => {
-              thread::spawn(move || {
-                thread::sleep(Duration::from_millis(15000));
-                let _ = msg.delete(&ctx);
-              });
-            }
-            Err(e) => println!("{}", e),
-          };
-        }
-      }
-      Err(e) => println!("Automod Error: {}", e),
-    };
   }
 }

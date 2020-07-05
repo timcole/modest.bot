@@ -2,42 +2,52 @@ mod commands;
 mod handler;
 mod shard;
 mod twitch;
+mod utils;
 
-use commands::{help::*, kill::*, ping::*};
+use commands::help::*;
+use commands::*;
 use dotenv;
-use serenity::client::Client;
-use serenity::framework::standard::macros::group;
-use serenity::framework::standard::StandardFramework;
-use serenity::model::id::UserId;
+use serenity::{client::Client, framework::standard::StandardFramework, model::id::UserId};
 use shard::ShardManagerContainer;
-use std::{collections::HashSet, sync::Arc};
+use std::{collections::HashSet, env, sync::Arc};
 
-#[group]
-#[commands(ping, help, kill)]
-struct General;
+extern crate pretty_env_logger;
 
-fn main() {
-  dotenv::dotenv();
+#[tokio::main]
+async fn main() {
+  dotenv::dotenv().ok();
+  pretty_env_logger::init();
 
-  let token: String = dotenv::var("DISCORD_TOKEN").expect("Missing token env");
-
-  let mut client: Client = Client::new(&token, handler::Handler).expect("Error creating client");
-
-  {
-    let mut data = client.data.write();
-    data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
-  }
+  let token: String = env::var("DISCORD_TOKEN").expect("Missing token env");
 
   let mut owners = HashSet::new();
   owners.insert(UserId(83281345949728768));
 
-  client.with_framework(
-    StandardFramework::new()
-      .configure(|c| c.owners(owners).prefix("!"))
-      .group(&GENERAL_GROUP),
-  );
+  let framework = StandardFramework::new()
+    .configure(|c| {
+      c.owners(owners)
+        .prefix("!")
+        .ignore_bots(true)
+        .ignore_webhooks(true)
+        .allow_dm(false)
+    })
+    .help(&HELP)
+    // .group(&GENERAL_GROUP)
+    .group(&ADMIN_GROUP);
 
-  if let Err(e) = client.start_shards(1) {
-    println!("Client error: {:?}", e);
+  let mut client: Client = Client::new(&token)
+    .event_handler(handler::Handler)
+    .framework(framework)
+    .await
+    .expect("Error creating client");
+
+  {
+    let mut data = client.data.write().await;
+    data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
   }
+
+  client
+    .start_autosharded()
+    .await
+    .expect("Failed to start autosharding.");
 }
