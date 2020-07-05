@@ -30,7 +30,7 @@ struct Resp {
 const AUTOMOD_MESSAGE: &'static str =
   "**Your message was blocked by Automod. Please watch what you say.**";
 
-pub async fn automod(ctx: Context, mut msg: Message) -> Result<(), reqwest::Error> {
+pub async fn automod(ctx: Context, mut msg: Message) -> Result<bool, reqwest::Error> {
   let client_id: String = env::var("TWITCH_CLIENT").expect("Missing twitch client");
   let bearer: String = format!(
     "Bearer {}",
@@ -55,12 +55,12 @@ pub async fn automod(ctx: Context, mut msg: Message) -> Result<(), reqwest::Erro
     .await?;
 
   if automod_resp.data[0].is_permitted {
-    return Ok(());
+    return Ok(true);
   }
 
   if msg.delete(&ctx).await.is_err() {
     log::error!("failed to delete message");
-    return Ok(());
+    return Ok(false);
   }
 
   msg = msg.reply(&ctx, AUTOMOD_MESSAGE).await.ok().unwrap();
@@ -72,5 +72,5 @@ pub async fn automod(ctx: Context, mut msg: Message) -> Result<(), reqwest::Erro
     }
   });
 
-  Ok(())
+  Ok(false)
 }

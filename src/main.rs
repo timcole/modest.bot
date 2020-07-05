@@ -1,5 +1,6 @@
 mod handler;
 mod twitch;
+mod utils;
 
 use dotenv;
 use serenity::client::Client;

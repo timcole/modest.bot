@@ -1,8 +1,9 @@
 use crate::twitch::automod;
+use crate::utils::mention;
 use serenity::{
   async_trait,
   client::Context,
-  model::{channel::Message, gateway::Ready, id::UserId},
+  model::{channel::Message, gateway::Ready},
   prelude::EventHandler,
 };
 
@@ -21,29 +22,35 @@ impl EventHandler for Handler {
     }
   }
   async fn message(&self, ctx: Context, msg: Message) {
+    let guild = match msg.guild_id {
+      Some(id) => id,
+      // Ignore DMs
+      None => return,
+    };
+
+    let channel = msg.channel_id;
+
     log::info!(
-      "({id}) {name}#{discrim}: {content}",
+      "[{guild}|{channel}] - ({id}) {name}#{discrim}: {content}",
+      guild = guild,
+      channel = channel,
       id = msg.author.id,
       name = msg.author.name,
       discrim = msg.author.discriminator,
       content = msg.content
     );
 
-    // Ignore messages from the bot
-    if msg.is_own(&ctx).await {
+    // Ignore messages from bots
+    if msg.author.bot {
       return;
     }
 
-    let tim = UserId(83281345949728768).to_user(&ctx).await.unwrap();
-    if msg.mentions.contains(&tim) {
-      let _ = msg.channel_id.say(
-        &ctx.http,
-        "Imagine pinging Tim... <:haHaa:340276843523473409>",
-      );
-
-      return;
+    if automod::automod(ctx.clone(), msg.clone())
+      .await
+      .ok()
+      .unwrap()
+    {
+      mention::tim(ctx.clone(), msg.clone()).await;
     }
-
-    automod::automod(ctx, msg).await;
   }
 }
