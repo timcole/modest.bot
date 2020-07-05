@@ -1,5 +1,4 @@
 mod handler;
-mod shard;
 mod twitch;
 
 use dotenv;
@@ -7,6 +6,8 @@ use serenity::client::Client;
 use serenity::framework::standard::StandardFramework;
 use serenity::model::id::UserId;
 use std::{collections::HashSet, env};
+
+extern crate pretty_env_logger;
 
 #[tokio::main]
 async fn main() {

@@ -1,12 +1,10 @@
-use crate::twitch::automod::*;
+use crate::twitch::automod;
 use serenity::{
   async_trait,
   client::Context,
   model::{channel::Message, gateway::Ready, id::UserId},
   prelude::EventHandler,
 };
-use std::time::Duration;
-use tokio::time::delay_for;
 
 pub struct Handler;
 
@@ -14,7 +12,7 @@ pub struct Handler;
 impl EventHandler for Handler {
   async fn ready(&self, _: Context, ready: Ready) {
     if let Some(shard) = ready.shard {
-      println!(
+      log::info!(
         "{} connected on shard {}/{}",
         ready.user.name,
         shard[0] + 1,
@@ -23,7 +21,7 @@ impl EventHandler for Handler {
     }
   }
   async fn message(&self, ctx: Context, msg: Message) {
-    println!(
+    log::info!(
       "({id}) {name}#{discrim}: {content}",
       id = msg.author.id,
       name = msg.author.name,
@@ -46,31 +44,6 @@ impl EventHandler for Handler {
       return;
     }
 
-    match automod(msg.content.clone()).await {
-      Ok(bool) => {
-        if !bool {
-          match msg.delete(&ctx).await {
-            Ok(_) => {}
-            Err(why) => println!("{}", why),
-          };
-          match msg
-            .reply(
-              &ctx,
-              "**Your message was blocked by Automod. Please watch what you say.**",
-            )
-            .await
-          {
-            Ok(msg) => {
-              tokio::spawn(async move {
-                delay_for(Duration::from_millis(15000)).await;
-                let _ = msg.delete(&ctx).await;
-              });
-            }
-            Err(e) => println!("{}", e),
-          };
-        }
-      }
-      Err(e) => println!("Automod Error: {}", e),
-    };
+    automod::automod(ctx, msg).await;
   }
 }
