@@ -3,7 +3,7 @@ use serenity::{
   framework::standard::{macros::help, Args, CommandGroup, CommandResult, HelpOptions},
   model::prelude::*,
 };
-use std::{collections::HashSet, env};
+use std::collections::HashSet;
 
 #[help]
 async fn help(
@@ -40,16 +40,10 @@ async fn help(
             .url("https://github.com/ModestLand/discord-bot")
         })
         .fields(fields)
-        .footer(|f| {
-          f.text(format!(
-            "Commit Hash: {}",
-            &env::var("GIT_HASH").unwrap()[0..7]
-          ))
-        })
+        .footer(|f| f.text(format!("Commit Hash: {}", &env!("GIT_HASH")[0..7])))
       })
     })
     .await?;
 
   Ok(())
 }
-

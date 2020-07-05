@@ -25,7 +25,7 @@ impl EventHandler for Handler {
       .set_presence(
         Some(Activity::listening(&format!(
           "Version: {}",
-          &env::var("GIT_HASH").unwrap()[0..7]
+          &env!("GIT_HASH")[0..7]
         ))),
         OnlineStatus::DoNotDisturb,
       )
