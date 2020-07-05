@@ -5,7 +5,7 @@ use serenity::prelude::*;
 
 #[command]
 #[owners_only]
-fn kill(ctx: &mut Context, msg: &Message) -> CommandResult {
+async fn kill(ctx: &mut Context, msg: &Message) -> CommandResult {
   let data = ctx.data.read();
 
   let _ = msg.reply(&ctx, "Shutting down!");

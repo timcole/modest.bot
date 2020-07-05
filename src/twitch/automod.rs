@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::env;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Data {
@@ -23,9 +24,8 @@ struct Resp {
   data: Vec<RespData>,
 }
 
-#[tokio::main]
 pub async fn automod(msg: String) -> Result<bool, reqwest::Error> {
-  let client_id: String = dotenv::var("TWITCH_CLIENT").expect("Missing twitch client");
+  let client_id: String = env::var("TWITCH_CLIENT").expect("Missing twitch client");
   let bearer: String = format!(
     "Bearer {}",
     dotenv::var("TWITCH_BEARER").expect("Missing twitch bearer")

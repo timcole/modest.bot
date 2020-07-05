@@ -4,7 +4,7 @@ use serenity::framework::standard::CommandResult;
 use serenity::model::prelude::Message;
 
 #[command]
-pub fn ping(ctx: &mut Context, msg: &Message) -> CommandResult {
+async pub fn ping(ctx: &mut Context, msg: &Message) -> CommandResult {
   let latency: i64 =
     chrono::offset::Utc::now().timestamp_millis() - msg.timestamp.timestamp_millis();
 

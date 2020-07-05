@@ -1,14 +1,18 @@
 use crate::twitch::automod::*;
-use serenity::client::Context;
-use serenity::model::{channel::Message, gateway::Ready, id::UserId};
-use serenity::prelude::EventHandler;
-use std::thread;
+use serenity::{
+  async_trait,
+  client::Context,
+  model::{channel::Message, gateway::Ready, id::UserId},
+  prelude::EventHandler,
+};
 use std::time::Duration;
+use tokio::time::delay_for;
 
 pub struct Handler;
 
+#[async_trait]
 impl EventHandler for Handler {
-  fn ready(&self, _: Context, ready: Ready) {
+  async fn ready(&self, _: Context, ready: Ready) {
     if let Some(shard) = ready.shard {
       println!(
         "{} connected on shard {}/{}",
@@ -18,7 +22,7 @@ impl EventHandler for Handler {
       );
     }
   }
-  fn message(&self, ctx: Context, msg: Message) {
+  async fn message(&self, ctx: Context, msg: Message) {
     println!(
       "({id}) {name}#{discrim}: {content}",
       id = msg.author.id,
@@ -28,11 +32,11 @@ impl EventHandler for Handler {
     );
 
     // Ignore messages from the bot
-    if msg.is_own(&ctx) {
+    if msg.is_own(&ctx).await {
       return;
     }
 
-    let tim = UserId(83281345949728768).to_user(&ctx).unwrap();
+    let tim = UserId(83281345949728768).to_user(&ctx).await.unwrap();
     if msg.mentions.contains(&tim) {
       let _ = msg.channel_id.say(
         &ctx.http,
@@ -42,18 +46,24 @@ impl EventHandler for Handler {
       return;
     }
 
-    match automod(msg.content.clone()) {
+    match automod(msg.content.clone()).await {
       Ok(bool) => {
         if !bool {
-          let _ = msg.delete(&ctx);
-          match msg.reply(
-            &ctx,
-            "**Your message was blocked by Automod. Please watch what you say.**",
-          ) {
+          match msg.delete(&ctx).await {
+            Ok(_) => {}
+            Err(why) => println!("{}", why),
+          };
+          match msg
+            .reply(
+              &ctx,
+              "**Your message was blocked by Automod. Please watch what you say.**",
+            )
+            .await
+          {
             Ok(msg) => {
-              thread::spawn(move || {
-                thread::sleep(Duration::from_millis(15000));
-                let _ = msg.delete(&ctx);
+              tokio::spawn(async move {
+                delay_for(Duration::from_millis(15000)).await;
+                let _ = msg.delete(&ctx).await;
               });
             }
             Err(e) => println!("{}", e),

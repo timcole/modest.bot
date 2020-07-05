@@ -4,7 +4,7 @@ use serenity::framework::standard::CommandResult;
 use serenity::model::prelude::Message;
 
 #[command]
-fn help(ctx: &mut Context, msg: &Message) -> CommandResult {
+async fn help(ctx: &mut Context, msg: &Message) -> CommandResult {
   let _ = msg.channel_id.say(&ctx.http, "Go to bed");
   Ok(())
 }
