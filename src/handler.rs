@@ -1,3 +1,4 @@
+use crate::postgres::store;
 use crate::twitch::automod;
 use crate::utils::mention;
 use serenity::{
@@ -55,11 +56,14 @@ impl EventHandler for Handler {
       return;
     }
 
-    if automod::automod(ctx.clone(), msg.clone())
+    let permitted = automod::automod(ctx.clone(), msg.clone())
       .await
       .ok()
-      .unwrap()
-    {
+      .unwrap();
+
+    store::message(ctx.clone(), msg.clone(), permitted).await;
+
+    if permitted {
       mention::tim(ctx.clone(), msg.clone()).await;
     }
   }
