@@ -4,7 +4,10 @@ use crate::utils::mention;
 use serenity::{
   async_trait,
   client::Context,
-  model::{channel::Message, gateway::Activity, gateway::Ready, user::OnlineStatus},
+  model::{
+    channel::Message, gateway::Activity, gateway::Ready, guild::Guild, id::UserId,
+    user::OnlineStatus,
+  },
   prelude::EventHandler,
 };
 use std::env;
@@ -33,18 +36,15 @@ impl EventHandler for Handler {
       .await;
   }
   async fn message(&self, ctx: Context, msg: Message) {
-    let guild = match msg.guild_id {
-      Some(id) => id,
-      // Ignore DMs
+    let guild = match msg.guild(&ctx).await {
+      Some(guild) => guild,
       None => return,
     };
 
-    let channel = msg.channel_id;
-
     log::info!(
-      "[{guild}|{channel}] - ({id}) {name}#{discrim}: {content}",
-      guild = guild,
-      channel = channel,
+      target: &format!("{} ({})", guild.id, guild.name)[..],
+      "{channel} > {name}#{discrim} ({id}): {content}",
+      channel = msg.channel_id,
       id = msg.author.id,
       name = msg.author.name,
       discrim = msg.author.discriminator,
@@ -67,4 +67,27 @@ impl EventHandler for Handler {
       mention::tim(ctx.clone(), msg.clone()).await;
     }
   }
+  async fn guild_create(&self, ctx: Context, guild: Guild, _is_new: bool) {
+    let target = &format!("processing::{}", guild.id)[..];
+    log::info!(target: target, "{}", guild.id);
+    // TODO: uncomment
+    // if !is_new {
+    //   return;
+    // }
+
+    let mut after: Option<UserId> = Some(UserId(0));
+    while after.is_some() {
+      let members = match guild.members(&ctx.http, Some(3), after).await {
+        Ok(members) => members,
+        Err(_) => break,
+      };
+
+      after = match members.last() {
+        Some(member) => Some(member.user.id),
+        None => None,
+      };
+      store::members(ctx.clone(), members.clone()).await;
+    }
+  }
+  // TODO: add hander for member join and leave
 }
