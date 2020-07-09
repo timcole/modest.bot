@@ -67,17 +67,17 @@ impl EventHandler for Handler {
       mention::tim(ctx.clone(), msg.clone()).await;
     }
   }
-  async fn guild_create(&self, ctx: Context, guild: Guild, _is_new: bool) {
+  async fn guild_create(&self, ctx: Context, guild: Guild, is_new: bool) {
+    if !is_new {
+      return;
+    }
+
     let target = &format!("processing::{}", guild.id)[..];
     log::info!(target: target, "{}", guild.id);
-    // TODO: uncomment
-    // if !is_new {
-    //   return;
-    // }
 
     let mut after: Option<UserId> = Some(UserId(0));
     while after.is_some() {
-      let members = match guild.members(&ctx.http, Some(3), after).await {
+      let members = match guild.members(&ctx.http, Some(1000), after).await {
         Ok(members) => members,
         Err(_) => break,
       };

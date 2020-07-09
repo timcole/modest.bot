@@ -43,8 +43,12 @@ pub async fn members(ctx: Context, mut members: Vec<Member>) {
       return;
     }
   };
-  // TODO: Add on conflict do update
-  let query = "INSERT INTO members (id, guild_id, avatar, bot, name, discriminator, roles) VALUES ($1, $2, $3, $4, $5, $6, $7)";
+  let query = "
+    INSERT INTO members
+      (id, guild_id, avatar, bot, name, discriminator, roles)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    ON CONFLICT (id, guild_id) DO UPDATE SET
+      avatar = EXCLUDED.avatar, name = EXCLUDED.name, discriminator = EXCLUDED.discriminator, roles = EXCLUDED.roles";
   while !&members.is_empty() {
     let member = members.pop().unwrap();
     // TODO: Stop with the single inserts and move to grouping inserts.
@@ -54,7 +58,7 @@ pub async fn members(ctx: Context, mut members: Vec<Member>) {
         &[
           &i64::try_from(*member.user.id.as_u64()).unwrap(),
           &i64::try_from(*member.guild_id.as_u64()).unwrap(),
-          &member.user.avatar.unwrap(),
+          &member.user.avatar,
           &member.user.bot,
           &member.user.name,
           &i16::try_from(member.user.discriminator).unwrap(),

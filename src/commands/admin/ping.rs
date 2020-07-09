@@ -56,7 +56,7 @@ async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 
   let guilds = pool
     .query(
-      "SELECT row_to_json(t, false)::TEXT FROM (SELECT * FROM guilds) t",
+      "SELECT row_to_json(t, false)::TEXT FROM (SELECT guilds.name,COUNT(members.id)AS members FROM guilds INNER JOIN members ON members.guild_id=guilds.id GROUP BY(members.guild_id,guilds.id)) t",
       &[],
     )
     .await?;
