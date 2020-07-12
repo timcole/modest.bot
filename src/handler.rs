@@ -29,12 +29,15 @@ impl EventHandler for Handler {
         shard[1],
       );
     }
+
+    let mut status = format!("Version: {}", &env!("GIT_HASH")[0..7]);
+    if &env!("GIT_BRANCH") != &"main" {
+      status = format!("Branch: {}", env!("GIT_BRANCH"));
+    }
+
     ctx
       .set_presence(
-        Some(Activity::listening(&format!(
-          "Version: {}",
-          &env!("GIT_HASH")[0..7]
-        ))),
+        Some(Activity::listening(&status)),
         OnlineStatus::DoNotDisturb,
       )
       .await;
