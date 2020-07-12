@@ -2,8 +2,8 @@ use crate::ShardManagerContainer;
 use serenity::{
   client::bridge::gateway::ShardId,
   framework::standard::{macros::command, CommandResult},
-  model::prelude::*,
-  prelude::*,
+  model::prelude::Message,
+  prelude::Context,
 };
 
 #[command]

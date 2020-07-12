@@ -1,7 +1,9 @@
 use crate::ShardManagerContainer;
-use serenity::framework::standard::{macros::command, CommandResult};
-use serenity::model::prelude::*;
-use serenity::prelude::*;
+use serenity::{
+  framework::standard::{macros::command, CommandResult},
+  model::prelude::Message,
+  prelude::Context,
+};
 
 #[command]
 async fn kill(ctx: &Context, msg: &Message) -> CommandResult {
