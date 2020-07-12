@@ -5,8 +5,12 @@ use serenity::{
   async_trait,
   client::Context,
   model::{
-    channel::Message, gateway::Activity, gateway::Ready, guild::Guild, id::UserId,
-    user::OnlineStatus,
+    channel::Message,
+    gateway::Activity,
+    gateway::Ready,
+    guild::{Guild, Member, PartialGuild, Role},
+    id::{GuildId, RoleId, UserId},
+    user::{OnlineStatus, User},
   },
   prelude::EventHandler,
 };
@@ -43,9 +47,10 @@ impl EventHandler for Handler {
 
     log::info!(
       target: &format!("{} ({})", guild.id, guild.name)[..],
-      "{channel} > {name}#{discrim} ({id}): {content}",
-      channel = msg.channel_id,
-      id = msg.author.id,
+      "{channel_id} > {message_id} > {name}#{discrim} ({user_id}): {content}",
+      channel_id = msg.channel_id,
+      message_id = msg.id,
+      user_id = msg.author.id,
       name = msg.author.name,
       discrim = msg.author.discriminator,
       content = msg.content
@@ -68,12 +73,14 @@ impl EventHandler for Handler {
     }
   }
   async fn guild_create(&self, ctx: Context, guild: Guild, is_new: bool) {
-    if !is_new {
+    if !is_new && !store::is_new_guild(ctx.clone(), guild.id.clone()).await {
       return;
     }
 
     let target = &format!("processing::{}", guild.id)[..];
     log::info!(target: target, "{}", guild.id);
+
+    store::guild(ctx.clone(), guild.clone()).await;
 
     let mut after: Option<UserId> = Some(UserId(0));
     while after.is_some() {
@@ -89,5 +96,37 @@ impl EventHandler for Handler {
       store::members(ctx.clone(), members.clone()).await;
     }
   }
-  // TODO: add hander for member join and leave
+  async fn guild_role_create(&self, ctx: Context, guild_id: GuildId, new: Role) {
+    store::role(ctx, guild_id, &new).await;
+  }
+  async fn guild_role_delete(
+    &self,
+    ctx: Context,
+    guild_id: GuildId,
+    role_id: RoleId,
+    _: Option<Role>,
+  ) {
+    store::del_role(ctx, guild_id, role_id).await;
+  }
+  async fn guild_role_update(&self, ctx: Context, guild_id: GuildId, _: Option<Role>, new: Role) {
+    store::role(ctx, guild_id, &new).await;
+  }
+  async fn guild_update(&self, ctx: Context, _: Option<Guild>, guild: PartialGuild) {
+    store::part_guild(ctx, guild).await;
+  }
+  async fn guild_member_addition(&self, ctx: Context, _: GuildId, member: Member) {
+    store::members(ctx, vec![member]).await;
+  }
+  async fn guild_member_update(&self, ctx: Context, _: Option<Member>, member: Member) {
+    store::members(ctx, vec![member]).await;
+  }
+  async fn guild_member_removal(
+    &self,
+    ctx: Context,
+    guild_id: GuildId,
+    user: User,
+    _: Option<Member>,
+  ) {
+    store::del_member(ctx, guild_id, user.id).await;
+  }
 }
