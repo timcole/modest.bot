@@ -1,4 +1,4 @@
-use crate::postgres::store;
+use crate::postgres::{delete, get, store};
 use crate::twitch::automod;
 use crate::utils::mention;
 use serenity::{
@@ -76,7 +76,7 @@ impl EventHandler for Handler {
     }
   }
   async fn guild_create(&self, ctx: Context, guild: Guild, is_new: bool) {
-    if !is_new && !store::is_new_guild(ctx.clone(), guild.id.clone()).await {
+    if !is_new && !get::is_new_guild(ctx.clone(), guild.id.clone()).await {
       return;
     }
 
@@ -109,7 +109,7 @@ impl EventHandler for Handler {
     role_id: RoleId,
     _: Option<Role>,
   ) {
-    store::del_role(ctx, guild_id, role_id).await;
+    delete::role(ctx, guild_id, role_id).await;
   }
   async fn guild_role_update(&self, ctx: Context, guild_id: GuildId, _: Option<Role>, new: Role) {
     store::role(ctx, guild_id, &new).await;
@@ -130,6 +130,6 @@ impl EventHandler for Handler {
     user: User,
     _: Option<Member>,
   ) {
-    store::del_member(ctx, guild_id, user.id).await;
+    delete::member(ctx, guild_id, user.id).await;
   }
 }
