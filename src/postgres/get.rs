@@ -1,4 +1,4 @@
-use crate::PostgresPool;
+use crate::discord::shard::PostgresPool;
 use serenity::{client::Context, model::id::GuildId};
 use std::convert::TryFrom;
 

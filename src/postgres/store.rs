@@ -1,4 +1,4 @@
-use crate::PostgresPool;
+use crate::discord::shard::PostgresPool;
 use postgres_array::Array;
 use serenity::{
   client::Context,
