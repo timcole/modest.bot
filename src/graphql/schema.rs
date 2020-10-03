@@ -1,4 +1,4 @@
-use async_graphql::Context;
+use async_graphql::{Context, FieldError, FieldResult};
 use bb8_postgres::PostgresConnectionManager;
 use postgres::NoTls;
 
@@ -28,22 +28,33 @@ pub struct QueryRoot;
 
 #[async_graphql::Object]
 impl QueryRoot {
-  async fn guilds(&self, ctx: &Context<'_>) -> Vec<Guild> {
-    let pool = ctx.data_unchecked::<PostgresPool>().get().await.unwrap();
+  async fn guild(&self, ctx: &Context<'_>, id: i64) -> FieldResult<Guild> {
+    let pool = match ctx.data_unchecked::<PostgresPool>().get().await {
+      Ok(pool) => pool,
+      Err(_) => return Err(FieldError("Fatal db pool error".to_string(), None)),
+    };
 
-    let guilds = pool
-      .query("SELECT id, name FROM guilds", &[])
+    let guild = match pool
+      .query("SELECT id, name FROM guilds WHERE id = $1", &[&id])
       .await
-      .unwrap();
-    let mut resp: Vec<Guild> = Vec::new();
-    for guild in guilds {
-      resp.push(Guild {
-        id: guild.get(0),
-        name: guild.get(1),
-      });
+    {
+      Ok(guild) => guild,
+      Err(e) => {
+        println!("{}", e);
+        return Err(FieldError("Failed to fetch guild".to_string(), None));
+      }
+    };
+
+    if guild.len() == 0 {
+      return Err(FieldError("Guild not found".to_string(), None));
     }
 
-    resp
+    let guild = &guild[0];
+
+    Ok(Guild {
+      id: guild.get(0),
+      name: guild.get(1),
+    })
   }
 }
 
