@@ -30,7 +30,7 @@ struct Resp {
 const AUTOMOD_MESSAGE: &'static str =
   "**Your message was blocked by Automod. Please watch what you say.**";
 
-pub async fn automod(ctx: Context, mut msg: Message) -> Result<bool, reqwest::Error> {
+pub async fn automod(ctx: &Context, msg: &Message) -> Result<bool, reqwest::Error> {
   let client_id: String = env::var("TWITCH_CLIENT").expect("Missing twitch client");
   let bearer: String = format!(
     "Bearer {}",
@@ -42,9 +42,9 @@ pub async fn automod(ctx: Context, mut msg: Message) -> Result<bool, reqwest::Er
     .post("https://api.twitch.tv/helix/moderation/enforcements/status?broadcaster_id=51684790")
     .json(&Body {
       data: vec![Data {
-        msg_id: msg.id.to_string().clone(),
+        msg_id: msg.id.as_ref().to_string(),
         user_id: String::from("1"),
-        msg_text: msg.content.clone(),
+        msg_text: msg.content.to_string(),
       }],
     })
     .header("Client-ID", client_id)
@@ -58,13 +58,14 @@ pub async fn automod(ctx: Context, mut msg: Message) -> Result<bool, reqwest::Er
     return Ok(true);
   }
 
-  if msg.delete(&ctx).await.is_err() {
+  if msg.delete(ctx).await.is_err() {
     log::error!("failed to delete message");
     return Ok(false);
   }
 
-  msg = msg.reply(&ctx, AUTOMOD_MESSAGE).await.ok().unwrap();
+  let msg = msg.reply(ctx, AUTOMOD_MESSAGE).await.ok().unwrap();
 
+  let ctx = ctx.clone();
   tokio::spawn(async move {
     delay_for(Duration::from_millis(15000)).await;
     if !msg.delete(&ctx).await.is_err() {

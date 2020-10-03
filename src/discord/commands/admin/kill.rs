@@ -1,4 +1,4 @@
-use crate::ShardManagerContainer;
+use crate::discord::shard::ShardManagerContainer;
 use serenity::{
   framework::standard::{macros::command, CommandResult},
   model::prelude::Message,
