@@ -5,9 +5,9 @@ use async_graphql_warp::{graphql_subscription, GQLResponse};
 use std::convert::Infallible;
 use warp::{http::Response, Filter};
 
-pub async fn start(pool: PostgresPool) {
+pub async fn start(pool: &PostgresPool) {
   let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
-    .data(pool)
+    .data(pool.clone())
     .finish();
 
   println!("Playground: http://localhost:8000");

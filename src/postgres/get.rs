@@ -2,7 +2,7 @@ use crate::discord::shard::PostgresPool;
 use serenity::{client::Context, model::id::GuildId};
 use std::convert::TryFrom;
 
-pub async fn is_new_guild(ctx: Context, guild_id: GuildId) -> bool {
+pub async fn is_new_guild(ctx: &Context, guild_id: GuildId) -> bool {
   let data = ctx.data.read().await;
   let pool = match data.get::<PostgresPool>() {
     Some(v) => v.get().await.unwrap(),

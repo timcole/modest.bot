@@ -15,6 +15,6 @@ async fn main() {
     .await
     .expect("Failed to setup postgres");
 
-  crate::discord::connection::setup(pool.clone()).await;
-  crate::graphql::server::start(pool.clone()).await;
+  crate::discord::connection::setup(&pool).await;
+  crate::graphql::server::start(&pool).await;
 }

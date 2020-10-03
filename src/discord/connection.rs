@@ -10,7 +10,7 @@ use serenity::prelude::Mutex;
 use serenity::{client::Client, framework::standard::StandardFramework, model::id::UserId};
 use std::{collections::HashSet, env, sync::Arc};
 
-pub async fn setup(pool: bb8::Pool<PostgresConnectionManager<NoTls>>) -> Arc<Mutex<ShardManager>> {
+pub async fn setup(pool: &bb8::Pool<PostgresConnectionManager<NoTls>>) -> Arc<Mutex<ShardManager>> {
   let token: String = env::var("DISCORD_TOKEN").expect("Missing token env");
 
   let mut owners = HashSet::new();

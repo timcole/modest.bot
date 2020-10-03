@@ -10,7 +10,7 @@ use serenity::{
 };
 use std::convert::TryFrom;
 
-pub async fn message(ctx: Context, msg: Message, permitted: bool) {
+pub async fn message(ctx: &Context, msg: &Message, permitted: bool) {
   let data = ctx.data.read().await;
   let pool = match data.get::<PostgresPool>() {
     Some(v) => v.get().await.unwrap(),
@@ -63,7 +63,7 @@ pub async fn part_guild(ctx: Context, guild: PartialGuild) {
         &guild.splash,
         &guild.banner,
         &guild.icon,
-        &Array::from_vec(guild.features.clone(), guild.features.len() as i32),
+        &Array::from_vec((&guild.features).to_vec(), guild.features.len() as i32),
         &guild.vanity_url_code,
         &guild.description,
       ],
@@ -75,7 +75,7 @@ pub async fn part_guild(ctx: Context, guild: PartialGuild) {
   };
 }
 
-pub async fn guild(ctx: Context, guild: Guild) {
+pub async fn guild(ctx: &Context, guild: &Guild) {
   let data = ctx.data.read().await;
   let pool = match data.get::<PostgresPool>() {
     Some(v) => v.get().await.unwrap(),
@@ -100,7 +100,7 @@ pub async fn guild(ctx: Context, guild: Guild) {
         &guild.splash,
         &guild.banner,
         &guild.icon,
-        &Array::from_vec(guild.features.clone(), guild.features.len() as i32),
+        &Array::from_vec((&guild.features).to_vec(), guild.features.len() as i32),
         &guild.vanity_url_code,
         &guild.description,
       ],
@@ -111,12 +111,12 @@ pub async fn guild(ctx: Context, guild: Guild) {
     Err(e) => log::error!("{:#?}", e),
   };
 
-  for (_, r) in guild.roles.clone().iter() {
-    role(ctx.clone(), guild.id, r).await;
+  for (_, r) in (&guild.roles).iter() {
+    role(&ctx, guild.id, r).await;
   }
 }
 
-pub async fn role(ctx: Context, guild_id: GuildId, role: &Role) {
+pub async fn role(ctx: &Context, guild_id: GuildId, role: &Role) {
   let data = ctx.data.read().await;
   let pool = match data.get::<PostgresPool>() {
     Some(v) => v.get().await.unwrap(),
@@ -158,7 +158,7 @@ pub async fn role(ctx: Context, guild_id: GuildId, role: &Role) {
   };
 }
 
-pub async fn members(ctx: Context, mut members: Vec<Member>) {
+pub async fn members(ctx: &Context, mut members: Vec<Member>) {
   let data = ctx.data.read().await;
   let pool = match data.get::<PostgresPool>() {
     Some(v) => v.get().await.unwrap(),

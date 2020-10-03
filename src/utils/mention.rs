@@ -3,7 +3,7 @@ use serenity::{
   model::{channel::Message, id::UserId},
 };
 
-pub async fn tim(ctx: Context, msg: Message) {
+pub async fn tim(ctx: &Context, msg: &Message) {
   if msg.mentions_user_id(&UserId(83281345949728768)) {
     msg
       .reply(
