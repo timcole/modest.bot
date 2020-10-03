@@ -1,4 +1,4 @@
-use crate::PostgresPool;
+use crate::discord::shard::PostgresPool;
 use regex::Regex;
 use serenity::{
   framework::standard::{macros::command, Args, CommandResult},

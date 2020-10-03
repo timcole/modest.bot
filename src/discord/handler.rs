@@ -64,26 +64,23 @@ impl EventHandler for Handler {
       return;
     }
 
-    let permitted = automod::automod(ctx.clone(), msg.clone())
-      .await
-      .ok()
-      .unwrap();
+    let permitted = automod::automod(&ctx, &msg).await.ok().unwrap();
 
-    store::message(ctx.clone(), msg.clone(), permitted).await;
+    store::message(&ctx, &msg, permitted).await;
 
     if permitted {
-      mention::tim(ctx.clone(), msg.clone()).await;
+      mention::tim(&ctx, &msg).await;
     }
   }
   async fn guild_create(&self, ctx: Context, guild: Guild, is_new: bool) {
-    if !is_new && !get::is_new_guild(ctx.clone(), guild.id.clone()).await {
+    if !is_new && !get::is_new_guild(&ctx, guild.id).await {
       return;
     }
 
     let target = &format!("processing::{}", guild.id)[..];
     log::info!(target: target, "{}", guild.id);
 
-    store::guild(ctx.clone(), guild.clone()).await;
+    store::guild(&ctx, &guild).await;
 
     let mut after: Option<UserId> = Some(UserId(0));
     while after.is_some() {
@@ -96,11 +93,11 @@ impl EventHandler for Handler {
         Some(member) => Some(member.user.id),
         None => None,
       };
-      store::members(ctx.clone(), members.clone()).await;
+      store::members(&ctx, members).await;
     }
   }
   async fn guild_role_create(&self, ctx: Context, guild_id: GuildId, new: Role) {
-    store::role(ctx, guild_id, &new).await;
+    store::role(&ctx, guild_id, &new).await;
   }
   async fn guild_role_delete(
     &self,
@@ -109,19 +106,19 @@ impl EventHandler for Handler {
     role_id: RoleId,
     _: Option<Role>,
   ) {
-    delete::role(ctx, guild_id, role_id).await;
+    delete::role(&ctx, guild_id, role_id).await;
   }
   async fn guild_role_update(&self, ctx: Context, guild_id: GuildId, _: Option<Role>, new: Role) {
-    store::role(ctx, guild_id, &new).await;
+    store::role(&ctx, guild_id, &new).await;
   }
   async fn guild_update(&self, ctx: Context, _: Option<Guild>, guild: PartialGuild) {
     store::part_guild(ctx, guild).await;
   }
   async fn guild_member_addition(&self, ctx: Context, _: GuildId, member: Member) {
-    store::members(ctx, vec![member]).await;
+    store::members(&ctx, vec![member]).await;
   }
   async fn guild_member_update(&self, ctx: Context, _: Option<Member>, member: Member) {
-    store::members(ctx, vec![member]).await;
+    store::members(&ctx, vec![member]).await;
   }
   async fn guild_member_removal(
     &self,

@@ -1,4 +1,4 @@
-use crate::ShardManagerContainer;
+use crate::discord::shard::ShardManagerContainer;
 use serenity::{
   client::bridge::gateway::ShardId,
   framework::standard::{macros::command, CommandResult},

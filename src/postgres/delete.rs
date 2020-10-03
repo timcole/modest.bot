@@ -1,11 +1,11 @@
-use crate::PostgresPool;
+use crate::discord::shard::PostgresPool;
 use serenity::{
   client::Context,
   model::id::{GuildId, RoleId, UserId},
 };
 use std::convert::TryFrom;
 
-pub async fn role(ctx: Context, guild_id: GuildId, role_id: RoleId) {
+pub async fn role(ctx: &Context, guild_id: GuildId, role_id: RoleId) {
   let data = ctx.data.read().await;
   let pool = match data.get::<PostgresPool>() {
     Some(v) => v.get().await.unwrap(),
