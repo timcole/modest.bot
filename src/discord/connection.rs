@@ -28,7 +28,7 @@ pub async fn setup(pool: &bb8::Pool<PostgresConnectionManager<NoTls>>) -> Arc<Mu
     // .group(&GENERAL_GROUP)
     .group(&ADMIN_GROUP);
 
-  let mut client: Client = Client::new(&token)
+  let mut client: Client = Client::builder(&token)
     .event_handler(handler::Handler)
     .framework(framework)
     .await

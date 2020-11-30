@@ -6,6 +6,7 @@ use serenity::{
 };
 
 #[command]
+#[owners_only]
 async fn kill(ctx: &Context, msg: &Message) -> CommandResult {
   let data = ctx.data.read().await;
 

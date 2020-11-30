@@ -7,6 +7,7 @@ use serenity::{
 };
 
 #[command]
+#[owners_only]
 async fn sql(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
   let data = ctx.data.read().await;
   let pool = match data.get::<PostgresPool>() {

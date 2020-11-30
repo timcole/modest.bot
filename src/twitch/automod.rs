@@ -58,17 +58,16 @@ pub async fn automod(ctx: &Context, msg: &Message) -> Result<bool, reqwest::Erro
     return Ok(true);
   }
 
+  let warning = msg.reply_ping(ctx, AUTOMOD_MESSAGE).await.ok().unwrap();
   if msg.delete(ctx).await.is_err() {
     log::error!("failed to delete message");
     return Ok(false);
   }
 
-  let msg = msg.reply(ctx, AUTOMOD_MESSAGE).await.ok().unwrap();
-
   let ctx = ctx.clone();
   tokio::spawn(async move {
     delay_for(Duration::from_millis(15000)).await;
-    if !msg.delete(&ctx).await.is_err() {
+    if !warning.delete(&ctx).await.is_err() {
       log::debug!("deleted warning to prevent spam");
     }
   });
