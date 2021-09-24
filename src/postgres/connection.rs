@@ -72,7 +72,9 @@ pub async fn setup() -> Result<Pool<PostgresConnectionManager<NoTls>>, RunError<
       );
 
       ALTER TABLE public.members ADD FOREIGN KEY (guild_id) REFERENCES public.guilds(id);
-      ALTER TABLE public.messages ADD FOREIGN KEY (guild_id) REFERENCES public.guilds(id);",
+      ALTER TABLE public.messages ADD FOREIGN KEY (guild_id) REFERENCES public.guilds(id);
+      ALTER TABLE public.guilds DROP COLUMN IF EXISTS region;
+      ",
     )
     .await
   {

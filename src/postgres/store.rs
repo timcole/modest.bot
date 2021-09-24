@@ -52,14 +52,13 @@ pub async fn part_guild(ctx: Context, guild: PartialGuild) {
     .execute(
       "
       INSERT INTO guilds
-        (id, name, owner_id, region, splash, banner, icon, features, vanity, description)
+        (id, name, owner_id, splash, banner, icon, features, vanity, description)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       ",
       &[
         &i64::try_from(*guild.id.as_u64()).unwrap(),
         &guild.name,
         &i64::try_from(*guild.owner_id.as_u64()).unwrap(),
-        &guild.region,
         &guild.splash,
         &guild.banner,
         &guild.icon,
@@ -89,14 +88,13 @@ pub async fn guild(ctx: &Context, guild: &Guild) {
     .execute(
       "
       INSERT INTO guilds
-        (id, name, owner_id, region, splash, banner, icon, features, vanity, description)
+        (id, name, owner_id, splash, banner, icon, features, vanity, description)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       ",
       &[
         &i64::try_from(*guild.id.as_u64()).unwrap(),
         &guild.name,
         &i64::try_from(*guild.owner_id.as_u64()).unwrap(),
-        &guild.region,
         &guild.splash,
         &guild.banner,
         &guild.icon,

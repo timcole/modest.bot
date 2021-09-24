@@ -1,5 +1,4 @@
 mod discord;
-mod graphql;
 mod postgres;
 mod twitch;
 mod utils;
@@ -16,5 +15,4 @@ async fn main() {
     .expect("Failed to setup postgres");
 
   crate::discord::connection::setup(&pool).await;
-  crate::graphql::server::start(&pool).await;
 }

@@ -5,12 +5,10 @@ use crate::discord::{
 };
 use bb8_postgres::PostgresConnectionManager;
 use postgres::NoTls;
-use serenity::client::bridge::gateway::ShardManager;
-use serenity::prelude::Mutex;
 use serenity::{client::Client, framework::standard::StandardFramework, model::id::UserId};
 use std::{collections::HashSet, env, sync::Arc};
 
-pub async fn setup(pool: &bb8::Pool<PostgresConnectionManager<NoTls>>) -> Arc<Mutex<ShardManager>> {
+pub async fn setup(pool: &bb8::Pool<PostgresConnectionManager<NoTls>>) {
   let token: String = env::var("DISCORD_TOKEN").expect("Missing token env");
 
   let mut owners = HashSet::new();
@@ -25,7 +23,6 @@ pub async fn setup(pool: &bb8::Pool<PostgresConnectionManager<NoTls>>) -> Arc<Mu
         .allow_dm(false)
     })
     .help(&HELP)
-    // .group(&GENERAL_GROUP)
     .group(&ADMIN_GROUP);
 
   let mut client: Client = Client::builder(&token)
@@ -40,12 +37,8 @@ pub async fn setup(pool: &bb8::Pool<PostgresConnectionManager<NoTls>>) -> Arc<Mu
     data.insert::<PostgresPool>(pool.clone());
   }
 
-  let shards = Arc::clone(&client.shard_manager);
-  tokio::spawn(async move {
-    client
-      .start_autosharded()
-      .await
-      .expect("Failed to start autosharding.");
-  });
-  shards
+  client
+    .start_autosharded()
+    .await
+    .expect("Failed to start autosharding.");
 }

@@ -37,7 +37,7 @@ impl EventHandler for Handler {
 
     ctx
       .set_presence(
-        Some(Activity::listening(&status)),
+        Some(Activity::watching(&status)),
         OnlineStatus::DoNotDisturb,
       )
       .await;
