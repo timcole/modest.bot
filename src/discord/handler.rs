@@ -3,7 +3,7 @@ use crate::twitch::automod;
 use crate::utils::mention;
 use serenity::{
   async_trait,
-  client::Context,
+  client::{Context, EventHandler},
   model::{
     channel::Message,
     gateway::Activity,
@@ -12,7 +12,6 @@ use serenity::{
     id::{GuildId, RoleId, UserId},
     user::{OnlineStatus, User},
   },
-  prelude::EventHandler,
 };
 use std::env;
 

@@ -35,9 +35,9 @@ async fn help(
     .send_message(&ctx.http, |m| {
       m.embed(|e| {
         e.author(|a| {
-          a.name("Developed in Rust by Timothy Cole")
-            .icon_url("https://github.com/timothycole.png")
-            .url("https://github.com/ModestLand/discord-bot")
+          a.name("Created by Tim#6969")
+            .icon_url("https://github.com/timcole.png")
+            .url("https://twitter.com/modesttim")
         })
         .fields(fields)
         .footer(|f| f.text(format!("Commit Hash: {}", &env!("GIT_HASH")[0..7])))
