@@ -1,5 +1,11 @@
+use crate::postgres::get;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use serenity::{client::Context, model::channel::Message};
+use serenity::{
+  client::Context,
+  model::{channel::Message, id::ChannelId},
+  utils::Colour,
+};
 use std::env;
 use std::time::Duration;
 use tokio::time::sleep;
@@ -61,18 +67,93 @@ pub async fn automod(ctx: &Context, msg: &Message) -> Result<bool, reqwest::Erro
     return Ok(true);
   }
 
-  let (safe_content, guild) = tokio::join!(msg.content_safe(&ctx.cache), msg.guild(&ctx.cache));
+  let log_channel = env::var("DISCORD_LOG_CHANNEL").ok();
+  let (safe_content, _guild) = tokio::join!(msg.content_safe(&ctx.cache), msg.guild(&ctx.cache));
+  let guild = _guild.unwrap();
   let dm_warning = msg
     .author
     .direct_message(&ctx, |m| {
       m.content(format!(
         "**Your message in {guild_name} (<#{channel_id}>) was blocked by Automod. Please watch what you say next time.**\n```{message_safe}```",
-        guild_name = &guild.unwrap().name,
-        channel_id = msg.channel_id,
+        guild_name = &guild.name,
+        channel_id = &msg.channel_id,
         message_safe = &safe_content
       ))
     })
     .await;
+
+  if log_channel.is_some() {
+    let channel = ChannelId(log_channel.unwrap().parse::<u64>().ok().unwrap());
+    let _ = channel
+      .send_message(&ctx.http, |m| {
+        m.add_embed(|e| {
+          e.colour(Colour::TEAL)
+            .title("User Message Removed")
+            .description(format!(
+              "**Channel**: <#{}>\n**Message ID**: {}\n```{}```",
+              &msg.channel_id, &msg.id, &safe_content,
+            ))
+            .footer(|f| {
+              f.text(format!(
+                "{}#{} - {}",
+                &msg.author.name, &msg.author.discriminator, &msg.author.id,
+              ))
+              .icon_url(
+                &msg
+                  .author
+                  .avatar_url()
+                  .unwrap_or(msg.author.default_avatar_url().to_string()),
+              )
+            })
+        })
+      })
+      .await;
+  }
+
+  if get::strikes(&ctx, &guild.id, &msg.author.id).await >= 2 {
+    let member = &mut guild.member(&ctx.http, &msg.author.id).await.ok().unwrap();
+    let timeout = Utc::now()
+      .checked_add_signed(chrono::Duration::days(7))
+      .unwrap();
+    match member
+      .disable_communication_until_datetime(&ctx.http, timeout)
+      .await
+    {
+      Ok(()) => {
+        log::info!("Timed out user");
+
+        let log_channel = env::var("DISCORD_LOG_CHANNEL").ok();
+        if log_channel.is_some() {
+          let channel = ChannelId(log_channel.unwrap().parse::<u64>().ok().unwrap());
+          let _ = channel
+            .send_message(&ctx.http, |m| {
+              m.add_embed(|e| {
+                e.colour(Colour::RED)
+                  .title("User Timed Out")
+                  .description(format!(
+                    "**3** automod infractions in **15 minutes**.\n**Cleared**: <t:{}:R>",
+                    &timeout.timestamp()
+                  ))
+                  .footer(|f| {
+                    f.text(format!(
+                      "{}#{} - {}",
+                      &msg.author.name, &msg.author.discriminator, &msg.author.id,
+                    ))
+                    .icon_url(
+                      &msg
+                        .author
+                        .avatar_url()
+                        .unwrap_or(msg.author.default_avatar_url().to_string()),
+                    )
+                  })
+              })
+            })
+            .await;
+        }
+      }
+      Err(..) => log::error!("Failed to timeout user"),
+    };
+  }
 
   match dm_warning.is_err() {
     false => log::info!("yelled at {} in DM's", msg.author),

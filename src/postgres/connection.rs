@@ -74,6 +74,24 @@ pub async fn setup() -> Result<Pool<PostgresConnectionManager<NoTls>>, RunError<
       ALTER TABLE public.members ADD FOREIGN KEY (guild_id) REFERENCES public.guilds(id);
       ALTER TABLE public.messages ADD FOREIGN KEY (guild_id) REFERENCES public.guilds(id);
       ALTER TABLE public.guilds DROP COLUMN IF EXISTS region;
+
+      CREATE OR REPLACE FUNCTION snow_tz (snow bigint) 
+        RETURNS timestamptz
+        LANGUAGE 'plpgsql'
+      AS $BODY$
+      DECLARE
+        epoch bigint := 1420070400000;
+        results bigint;
+      BEGIN
+        results := snow >> 22;
+        results := results + epoch;
+        results := results / 1000;
+        return to_timestamp(results);
+      END;
+      $BODY$;
+
+      ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+      UPDATE messages SET created_at = snow_tz(messages.id) WHERE created_at IS NULL;
       ",
     )
     .await

@@ -22,7 +22,7 @@ pub async fn message(ctx: &Context, msg: &Message, permitted: bool) {
 
   match pool
     .execute(
-      "INSERT INTO messages (id, guild_id, channel_id, author_id, content, permitted) VALUES ($1, $2, $3, $4, $5, $6)",
+      "INSERT INTO messages (id, guild_id, channel_id, author_id, content, permitted, created_at) VALUES ($1, $2, $3, $4, $5, $6, snow_tz($1))",
       &[
         &i64::try_from(*msg.id.as_u64()).unwrap(),
         &i64::try_from(*match msg.guild_id { Some(id) => id, None => return }.as_u64()).unwrap(),
@@ -53,7 +53,7 @@ pub async fn part_guild(ctx: Context, guild: PartialGuild) {
       "
       INSERT INTO guilds
         (id, name, owner_id, splash, banner, icon, features, vanity, description)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ",
       &[
         &i64::try_from(*guild.id.as_u64()).unwrap(),
@@ -89,7 +89,7 @@ pub async fn guild(ctx: &Context, guild: &Guild) {
       "
       INSERT INTO guilds
         (id, name, owner_id, splash, banner, icon, features, vanity, description)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ",
       &[
         &i64::try_from(*guild.id.as_u64()).unwrap(),
